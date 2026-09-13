@@ -19,7 +19,10 @@
     "test:e2e:offline": "playwright test tests/offline.spec.ts tests/map-tiles.spec.ts tests/map-reconnect.spec.ts tests/offline-nav.spec.ts tests/connectivity.spec.ts",
     "test:e2e:preview": "playwright test --grep-invert \"@local-only\"",
     "holidays:sync": "node scripts/sync-holidays.mjs",
-    "generate:stations": "node scripts/generate-stations.ts"
+    "generate:stations": "node scripts/generate-stations.ts",
+    "changelog:check": "node scripts/check-release-notes.mjs",
+    "changelog:prepare": "node scripts/prepare-changelog.mjs",
+    "changelog:extract": "node scripts/extract-changelog-section.mjs"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.29.0",

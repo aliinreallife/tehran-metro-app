@@ -38,3 +38,22 @@ jobs:
 
       - name: Unit tests
         run: pnpm test
+
+  release-notes:
+    name: release notes (FA/EN)
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+
+      - name: Check bilingual release notes
+        # No dependencies needed: the script uses Node builtins only.
+        env:
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: node scripts/check-release-notes.mjs

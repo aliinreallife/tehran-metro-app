@@ -67,6 +67,13 @@ jobs:
             exit 1
           fi
 
+      - name: Require matching CHANGELOG section
+        # The GitHub Release body comes from CHANGELOG.md. Fail here — before
+        # secrets or builds — instead of publishing generic/empty notes.
+        run: |
+          node scripts/extract-changelog-section.mjs "$GITHUB_REF_NAME" > /dev/null
+          echo "CHANGELOG section for $GITHUB_REF_NAME: present"
+
   build:
     name: signed build + GitHub Release
     needs: gate
@@ -178,6 +185,24 @@ jobs:
           (cd dist && sha256sum "metto-${GITHUB_REF_NAME}.aab" "metto-${GITHUB_REF_NAME}.apk" > SHA256SUMS.txt)
           cat dist/SHA256SUMS.txt
 
+      - name: Build release notes from CHANGELOG.md
+        # User-facing bilingual notes first, artifact details appended after.
+        # Extraction fails the job if the version section is missing.
+        run: |
+          set -euo pipefail
+          node scripts/extract-changelog-section.mjs "$GITHUB_REF_NAME" > RELEASE_NOTES.md
+          {
+            echo ""
+            echo "---"
+            echo ""
+            echo "Metto Android $GITHUB_REF_NAME (versionCode $VERSION_CODE)."
+            echo ""
+            echo "Artifacts: signed .apk (release certificate) for direct testing and Bazaar/Myket submission + signed .aab for future store needs, with SHA256SUMS.txt."
+            echo ""
+            echo "No store auto-publishing is configured."
+          } >> RELEASE_NOTES.md
+          cat RELEASE_NOTES.md
+
       - name: Create GitHub Release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -185,11 +210,7 @@ jobs:
           set -euo pipefail
           gh release create "$GITHUB_REF_NAME" \
             --title "$GITHUB_REF_NAME" \
-            --notes "Metto Android $GITHUB_REF_NAME (versionCode $VERSION_CODE).
-
-          Artifacts: signed .apk (release certificate) for direct testing and Bazaar/Myket submission + signed .aab for future store needs, with SHA256SUMS.txt.
-
-          No store auto-publishing is configured." \
+            --notes-file RELEASE_NOTES.md \
             "dist/metto-${GITHUB_REF_NAME}.aab" \
             "dist/metto-${GITHUB_REF_NAME}.apk" \
             dist/SHA256SUMS.txt
